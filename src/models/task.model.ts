@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType } from "mongoose";
+import mongoose, { Schema, InferSchemaType } from "mongoose";
 import "./user.model"; // Register User model first to avoid Mongoose populate errors
 
 const taskSchema = new Schema(
@@ -25,5 +25,5 @@ taskSchema.pre("save", function (next) {
   next();
 });
 
-export type TaskType = InferSchemaType<typeof taskSchema>;
-export const Task = model<TaskType>("Task", taskSchema);
+export type Task = InferSchemaType<typeof taskSchema>;
+export const TaskModel = mongoose.model("Task", taskSchema);

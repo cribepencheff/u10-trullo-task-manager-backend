@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { Task } from "../models/task.model";
+import { TaskModel } from "../models/task.model";
 
 export const getTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await Task.find().populate({
+    const tasks = await TaskModel.find().populate({
       path: "assignedTo",
       select: "name email",
     });
@@ -16,7 +16,7 @@ export const getTasks = async (req: Request, res: Response) => {
 
 export const getTaskById = async (req: Request, res: Response) => {
   try {
-    const task = await Task.findById(req.params.id).populate(
+    const task = await TaskModel.findById(req.params.id).populate(
       "assignedTo",
       "name email"
     );

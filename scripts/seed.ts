@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import { faker } from "@faker-js/faker";
-import { User } from "../src/models/user.model";
-import { Task } from "../src/models/task.model";
+import { UserModel } from "../src/models/user.model";
+import { TaskModel } from "../src/models/task.model";
 
 dotenv.config();
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -21,8 +21,8 @@ async function seedDatabase() {
 
   // Reset database
   await Promise.all([
-    Task.deleteMany({}),
-    User.deleteMany({}),
+    UserModel.deleteMany({}),
+    TaskModel.deleteMany({}),
   ]);
 
   // Create users
@@ -37,7 +37,7 @@ async function seedDatabase() {
     })
   );
 
-  const userDocs = await User.insertMany(users, { ordered: false });
+  const userDocs = await UserModel.insertMany(users, { ordered: false });
 
   // Create tasks
   const tasks = Array.from({ length: 50 }).map(() => {
@@ -52,10 +52,10 @@ async function seedDatabase() {
     };
   });
 
-  await Task.insertMany(tasks, { ordered: false });
+  await TaskModel.insertMany(tasks, { ordered: false });
 
-  const totalUsers = await User.countDocuments();
-  const totalTasks = await Task.countDocuments();
+  const totalUsers = await UserModel.countDocuments();
+  const totalTasks = await TaskModel.countDocuments();
 
   console.log(
     `Seeding completed: ${totalUsers} users, ${totalTasks} tasks.`
