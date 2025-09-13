@@ -24,13 +24,5 @@ export const createUserSchema = authSchema.extend({
     .min(3, "Name must be at least 3 characters long"),
 });
 
-export const updateUserSchema = z.object({
-  oldPassword: z.string()
-    .trim()
-    .min(8)
-    .regex(passwordRegex, passwordMessages.specialChar),
-  newPassword: z.string()
-    .trim()
-    .min(8)
-    .regex(passwordRegex, passwordMessages.specialChar),
-});
+// Partial makes all fields optional
+export const updateUserSchema = createUserSchema.partial();

@@ -25,13 +25,13 @@ export const createUser = async (req: Request, res: Response) => {
     const user = new UserModel({ name, email, password: hashedPassword });
     await user.save();
 
-    // Exclude password from response,
+    // Exclude password from response.
     const { password: _password, ...userSafe } = user.toJSON();
 
     res.status(201).json({ message: "User created", user: userSafe});
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Error when creating a new user." });
   }
 };
 
@@ -82,12 +82,67 @@ export const getUser = async (req: ProtectedRequest, res: Response) => {
     return res.status(200).json(userSafe);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Error fetching user." });
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: ProtectedRequest, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const { name, email, password } = req.body;
+
+    const newUserData: Partial<InstanceType<typeof UserModel>> = {};
+    if (name) newUserData.name = name;
+    if (email) newUserData.email = email;
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      newUserData.password = hashedPassword;
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: newUserData },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Exclude password from response.
+    const { password: _password, ...userSafe } = updatedUser.toJSON();
+
+    res.status(200).json({ message: "User updated successfully", user: userSafe });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error when updating new user." });
+  }
+
+
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: ProtectedRequest, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const deletedUser = await UserModel.findByIdAndDelete(userId).select("-password");
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found. Cannot delete non-existent user." });
+    }
+
+    res.status(200).json({ message: "User deleted successfully", deletedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error deleting user." });
+  }
 };
