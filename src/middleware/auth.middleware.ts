@@ -5,14 +5,14 @@ export interface ProtectedRequest extends Request {
   user?: JwtPayload;
 }
 
-const { JWT_SECRET } = process.env;
+const JWT_SECRET = process.env.JWT_SECRET as string;
+if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined");
 
 export const authMiddleware = ( req: ProtectedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization || "";
-  const [scheme, token] = authHeader.split(" "); // Bearer <token>
-
-  console.log(scheme, token);
-
+  const [scheme, token] = authHeader.split(" "); // Bearer <token>…
+  
+  // console.log(scheme, token);
   if (scheme !== "Bearer" || !token) {
     return res.status(401).json({ message: "Unauthorized request. Missing or invalid token." });
   }
@@ -21,16 +21,11 @@ export const authMiddleware = ( req: ProtectedRequest, res: Response, next: Next
     throw new Error("JWT_SECRET is not defined");
   }
 
-  if (!token) {
-    res.status(401).json({ message: "Unauthorized: No token provided" });
-    return;
-  }
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch (error) {
     res.status(401).json({ message: "Unauthorized: Invalid token" });
   }
 };
