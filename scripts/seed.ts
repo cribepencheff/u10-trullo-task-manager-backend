@@ -2,12 +2,13 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import { faker } from "@faker-js/faker";
-import { UserModel } from "../src/models/user.model";
+import { UserModel, UserRoleEnum } from "../src/models/user.model";
 import { TaskModel } from "../src/models/task.model";
 
 dotenv.config();
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME;
+const SALT_ROUNDS = 10;
 
 if (!MONGODB_URI) throw new Error("Missing MONGODB_URI in .env");
 if (!DB_NAME) throw new Error("Missing DB_NAME in .env");
@@ -25,10 +26,20 @@ async function seedDatabase() {
     TaskModel.deleteMany({}),
   ]);
 
+  // Admin user
+  const adminPasswordHash = await bcrypt.hash("Passw0rd!", SALT_ROUNDS);
+  const adminUser = new UserModel({
+    name: "Admin",
+    email: "admin@example.com",
+    password: adminPasswordHash,
+    role: UserRoleEnum.ADMIN,
+  });
+  await adminUser.save();
+
   // Create users
   const users = await Promise.all(
-    Array.from({ length: 20 }).map(async () => {
-      const passwordHash = await bcrypt.hash("password123", 10);
+    Array.from({ length: 3 }).map(async () => {
+      const passwordHash = await bcrypt.hash("Passw0rd!", 10);
       return {
         name: faker.person.fullName(),
         email: faker.internet.email().toLowerCase(),
@@ -36,11 +47,10 @@ async function seedDatabase() {
       };
     })
   );
-
   const userDocs = await UserModel.insertMany(users, { ordered: false });
 
   // Create tasks
-  const tasks = Array.from({ length: 50 }).map(() => {
+  const tasks = Array.from({ length: 10 }).map(() => {
     const status = rand(statuses);
     const assigned =
       Math.random() > 0.3 ? rand(userDocs)._id : null;
@@ -51,14 +61,22 @@ async function seedDatabase() {
       assignedTo: assigned,
     };
   });
+  const taskDocs = await TaskModel.insertMany(tasks, { ordered: false });
 
-  await TaskModel.insertMany(tasks, { ordered: false });
+  // Update users with their assigned tasks
+  for (const task of taskDocs) {
+  if (task.assignedTo) {
+    await UserModel.findByIdAndUpdate(task.assignedTo, {
+      $push: { tasks: task._id },
+    });
+  }
+}
 
   const totalUsers = await UserModel.countDocuments();
   const totalTasks = await TaskModel.countDocuments();
 
   console.log(
-    `Seeding completed: ${totalUsers} users, ${totalTasks} tasks.`
+    `Seeding completed: ${totalUsers} users (👤 ${adminUser.email} / Passw0rd! is admin), ${totalTasks} tasks.`
   );
 
   await mongoose.disconnect();
