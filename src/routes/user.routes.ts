@@ -16,6 +16,6 @@ router.post("/signup", validate(createUserSchema), createUser);
 router.post("/login", validate(authSchema), loginUser);
 router.get("/me", authMiddleware, getUser);
 router.put("/me", authMiddleware, validate(updateUserSchema), updateUser);
-router.delete("/me", authMiddleware, deleteUser);
+router.delete("/:id", authMiddleware, deleteUser);
 
 export default router;

@@ -8,11 +8,7 @@ const SALT_ROUNDS = 10;
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body || {};
-
-    if (!name || !email || !password || password.length < 8) {
-      return res.status(400).json({ message: "Invalid input" });
-    }
+    const { name, email, password } = req.body;
 
     const userExists = await UserModel.findOne({ email });
     if (userExists) {
@@ -127,14 +123,26 @@ export const updateUser = async (req: ProtectedRequest, res: Response) => {
 };
 
 export const deleteUser = async (req: ProtectedRequest, res: Response) => {
-  const userId = req.user?.id;
+  const targetUserId = req.params.id;
+  const requesterId = req.user?.id;
+  const requesterRole = req.user?.role;
 
-  if (!userId) {
+  if (!requesterId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  // Admin account can not delete itself.
+  // TODO: Future improvement - transfer admin rights before deletion
+  if (requesterRole === "admin" && requesterId === targetUserId) {
+    return res.status(403).json({ message: "Forbidden: Admin cannot delete their own account" });
+  }
+
+  if (requesterRole !== "admin" && requesterId !== targetUserId) {
+    return res.status(403).json({ message: "Forbidden: You can only delete your own account" });
+  }
+
   try {
-    const deletedUser = await UserModel.findByIdAndDelete(userId).select("-password");
+    const deletedUser = await UserModel.findByIdAndDelete(targetUserId).select("-password");
 
     if (!deletedUser) {
       return res.status(404).json({ message: "User not found. Cannot delete non-existent user." });

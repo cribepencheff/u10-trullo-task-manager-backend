@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 export interface ProtectedRequest extends Request {
-  user?: JwtPayload;
+  user?: JwtPayload & { role?: string };
 }
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
@@ -17,10 +17,6 @@ export const authMiddleware = ( req: ProtectedRequest, res: Response, next: Next
     return res.status(401).json({ message: "Unauthorized request. Missing or invalid token." });
   }
 
-  if (!JWT_SECRET) {
-    throw new Error("JWT_SECRET is not defined");
-  }
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     req.user = decoded;
@@ -29,3 +25,10 @@ export const authMiddleware = ( req: ProtectedRequest, res: Response, next: Next
     res.status(401).json({ message: "Unauthorized: Invalid token" });
   }
 };
+
+export const adminMiddleware = ( req: ProtectedRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden: Admins only" });
+  }
+  next();
+}

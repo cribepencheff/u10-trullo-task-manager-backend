@@ -8,7 +8,11 @@ if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in .env");
 
 export const createJWT = (user: InstanceType<typeof UserModel>) => {
   return jwt.sign(
-    { id: user._id.toString(), email: user.email },
+    {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    },
     JWT_SECRET,
     { expiresIn: EXPIRES_IN } as jwt.SignOptions
   );
