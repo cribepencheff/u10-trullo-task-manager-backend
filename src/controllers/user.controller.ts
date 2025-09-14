@@ -4,6 +4,7 @@ import { UserModel } from "../models/user.model";
 import bcrypt from "bcrypt";
 import { createJWT } from "../utils/jwt.utils";
 import mongoose from "mongoose";
+import { TaskModel } from "../models/task.model";
 
 const SALT_ROUNDS = 10;
 
@@ -167,6 +168,11 @@ export const deleteUser = async (req: ProtectedRequest, res: Response) => {
     if (!deletedUser) {
       return res.status(404).json({ error: "User not found. Cannot delete non-existent user." });
     }
+
+    await TaskModel.updateMany(
+      { assignedTo: deletedUser._id },
+      { $set: { assignedTo: null } }
+    );
 
     return res.status(200).json({ message: "User deleted successfully", deletedUser });
   } catch (error) {
