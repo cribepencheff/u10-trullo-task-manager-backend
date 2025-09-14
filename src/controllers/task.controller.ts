@@ -105,8 +105,61 @@ export const getTaskById = async (req: ProtectedRequest, res: Response) => {
   }
 };
 
-export const updateTask = async (req: Request, res: Response) => {
+export const updateTask = async (req: ProtectedRequest, res: Response) => {
+  try {
+    const { title, description, status, assignedTo } = req.body;
+    const task = await TaskModel.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (req.user?.role !== "admin" && task.assignedTo && task.assignedTo._id.toString() !== req.user?.id) {
+      return res.status(403).json({ error: "Forbidden: Not allowed to edit this task" });
+    }
+
+    if (assignedTo) {
+      const assignedUser = await UserModel.findById(assignedTo);
+      if (!assignedUser) {
+        return res.status(404).json({ error: "Assigned user not found" });
+      }
+      task.assignedTo = assignedTo;
+    }
+
+    if (title) task.title = title;
+    if (description) task.description = description;
+    if (status) task.status = status;
+    await task.save();
+
+    const populatedTask = await TaskModel.findById(task._id).populate(
+      "assignedTo",
+      "name email role"
+    );
+    return res.status(200).json({ task: populatedTask });
+
+  } catch (error) {
+    console.error("[tasks/updateTask]", error);
+    return res.status(500).json({ error: "Failed to update task" });
+  }
 };
 
-export const deleteTask = async (req: Request, res: Response) => {
+export const deleteTask = async (req: ProtectedRequest, res: Response) => {
+  try {
+    const task = await TaskModel.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    if (req.user?.role !== "admin" && task.assignedTo && task.assignedTo._id.toString() !== req.user?.id) {
+      return res.status(403).json({ error: "Forbidden: Not allowed to delete this task" });
+    }
+
+    await task.deleteOne();
+    return res.status(200).json({ message: "Task deleted successfully", task });
+
+  } catch (error) {
+    console.error("[tasks/deleteTask]", error);
+    return res.status(500).json({ error: "Failed to delete task" });
+  }
 };
