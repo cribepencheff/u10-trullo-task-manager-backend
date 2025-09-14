@@ -3,6 +3,7 @@ import { ProtectedRequest } from "../middleware/auth.middleware";
 import { UserModel } from "../models/user.model";
 import bcrypt from "bcrypt";
 import { createJWT } from "../utils/jwt.utils";
+import mongoose from "mongoose";
 
 const SALT_ROUNDS = 10;
 
@@ -12,7 +13,7 @@ export const createUser = async (req: Request, res: Response) => {
 
     const userExists = await UserModel.findOne({ email });
     if (userExists) {
-      return res.status(409).json({ message: "Email already in use" });
+      return res.status(409).json({ error: "Email already in use" });
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -24,10 +25,10 @@ export const createUser = async (req: Request, res: Response) => {
     // Exclude password from response.
     const { password: _password, ...userSafe } = user.toJSON();
 
-    res.status(201).json({ message: "User created", user: userSafe});
+    return res.status(201).json({ user: userSafe});
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error when creating a new user." });
+    console.error("[users/createUser]", error);
+    return res.status(500).json({ error: "Error when creating a new user." });
   }
 };
 
@@ -37,24 +38,25 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const user = await UserModel.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "User not found." });
+      return res.status(401).json({ error: "User not found." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials." });
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
     // Generate JWT
     const token = createJWT(user);
     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
 
+    // TODO: Remove console log before production
     console.log("Generated JWT:", token);
-    res.status(200).json({ message: "Login successful", token, expiresIn });
+    return res.status(200).json({ message: "Login successful", token, expiresIn });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error logging in." });
+    console.error("[users/loginUser]", error);
+    return res.status(500).json({ error: "Error logging in." });
   }
 }
 
@@ -62,23 +64,41 @@ export const getUser = async (req: ProtectedRequest, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
-    const user = await UserModel.findById(userId).populate("tasks");
+    const pipeline = [
+      { $match: { _id: new mongoose.Types.ObjectId(userId as string) } },
+      {
+        $lookup: {
+          from: "tasks",
+          localField: "_id",
+          foreignField: "assignedTo",
+          as: "tasks",
+        },
+      },
+      { $project: {
+        _id: 1,
+        name: 1,
+        email: 1,
+        role: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        tasks: { _id: 1 }
+      }}
+    ];
+
+    const [user] = await UserModel.aggregate(pipeline);
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Exclude password from response,
-    const { password: _password, ...userSafe } = user.toJSON();
-
-    return res.status(200).json(userSafe);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Error fetching user." });
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("[users/getUser]", error);
+    return res.status(500).json({ error: "Error fetching user." });
   }
 };
 
@@ -86,7 +106,7 @@ export const updateUser = async (req: ProtectedRequest, res: Response) => {
   const userId = req.user?.id;
 
   if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
@@ -107,16 +127,16 @@ export const updateUser = async (req: ProtectedRequest, res: Response) => {
     ).select("-password");
 
     if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Exclude password from response.
     const { password: _password, ...userSafe } = updatedUser.toJSON();
 
-    res.status(200).json({ message: "User updated successfully", user: userSafe });
+    return res.status(200).json({ message: "User updated successfully", user: userSafe });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error when updating new user." });
+    console.error("[users/updateUser]", error);
+    return res.status(500).json({ error: "Error when updating new user." });
   }
 
 
@@ -128,29 +148,29 @@ export const deleteUser = async (req: ProtectedRequest, res: Response) => {
   const requesterRole = req.user?.role;
 
   if (!requesterId) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   // Admin account can not delete itself.
   // TODO: Future improvement - transfer admin rights before deletion
   if (requesterRole === "admin" && requesterId === targetUserId) {
-    return res.status(403).json({ message: "Forbidden: Admin cannot delete their own account" });
+    return res.status(403).json({ error: "Forbidden: Admin cannot delete their own account" });
   }
 
   if (requesterRole !== "admin" && requesterId !== targetUserId) {
-    return res.status(403).json({ message: "Forbidden: You can only delete your own account" });
+    return res.status(403).json({ error: "Forbidden: You can only delete your own account" });
   }
 
   try {
     const deletedUser = await UserModel.findByIdAndDelete(targetUserId).select("-password");
 
     if (!deletedUser) {
-      return res.status(404).json({ message: "User not found. Cannot delete non-existent user." });
+      return res.status(404).json({ error: "User not found. Cannot delete non-existent user." });
     }
 
-    res.status(200).json({ message: "User deleted successfully", deletedUser });
+    return res.status(200).json({ message: "User deleted successfully", deletedUser });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error deleting user." });
+    console.error("[users/deleteUser]", error);
+    return res.status(500).json({ error: "Error deleting user." });
   }
 };

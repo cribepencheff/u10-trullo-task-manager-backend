@@ -10,8 +10,7 @@ const userSchema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 8 },
-    role: { type: String, enum: Object.values(UserRole), default: UserRole.USER },
-    tasks: [{ type: Schema.Types.ObjectId, ref: "Task" }]
+    role: { type: String, enum: Object.values(UserRole), default: UserRole.USER }
   },
   { timestamps: true }
 );

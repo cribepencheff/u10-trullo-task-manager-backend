@@ -61,16 +61,8 @@ async function seedDatabase() {
       assignedTo: assigned,
     };
   });
-  const taskDocs = await TaskModel.insertMany(tasks, { ordered: false });
 
-  // Update users with their assigned tasks
-  for (const task of taskDocs) {
-  if (task.assignedTo) {
-    await UserModel.findByIdAndUpdate(task.assignedTo, {
-      $push: { tasks: task._id },
-    });
-  }
-}
+  await TaskModel.insertMany(tasks, { ordered: false });
 
   const totalUsers = await UserModel.countDocuments();
   const totalTasks = await TaskModel.countDocuments();
