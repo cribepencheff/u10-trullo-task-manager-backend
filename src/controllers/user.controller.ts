@@ -1,12 +1,12 @@
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
 import { UserModel } from "../models/user.model";
-import bcrypt from "bcrypt";
 import { createJWT } from "../utils/jwt.utils";
-import mongoose from "mongoose";
 import { TaskModel } from "../models/task.model";
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = Number(process.env.SALT_ROUNDS) || 10;
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -139,8 +139,6 @@ export const updateUser = async (req: ProtectedRequest, res: Response) => {
     console.error("[users/updateUser]", error);
     return res.status(500).json({ error: "Error when updating new user." });
   }
-
-
 };
 
 export const deleteUser = async (req: ProtectedRequest, res: Response) => {

@@ -1,27 +1,32 @@
+import mongoose from "mongoose";
 import { Request, Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
-import { TaskModel } from "../models/task.model";
+import { TaskModel, TaskStatusEnum } from "../models/task.model";
 import { UserModel } from "../models/user.model";
 
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, assignedTo } = req.body;
+    const { title, description, assignedTo, status } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
 
-    if (assignedTo) {
-      const assignedUser = await UserModel.findById(assignedTo);
-      if (!assignedUser) {
-        return res.status(404).json({ error: "Assigned user not found" });
-      }
+    if (assignedTo && !(await UserModel.exists({ _id: assignedTo }))) {
+      return res.status(404).json({ error: "Assigned user not found" });
+    }
+
+    if (status && !Object.values(TaskStatusEnum).includes(status)) {
+      return res.status(400).json({
+        error: `Invalid status. Allowed values: ${Object.values(TaskStatusEnum).join(", ")}`
+      });
     }
 
     const newTask = await TaskModel.create({
       title,
       description,
       assignedTo: assignedTo || null,
+      status
     });
 
     const pipeline = [
