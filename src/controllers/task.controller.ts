@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
-import { Request, Response } from "express";
+import { Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
 import { TaskModel, TaskStatusEnum } from "../models/task.model";
 import { UserModel } from "../models/user.model";
+import { finished } from "stream";
 
-export const createTask = async (req: Request, res: Response) => {
+export const createTask = async (req: ProtectedRequest, res: Response) => {
   try {
     const { title, description, assignedTo, status } = req.body;
 
@@ -26,7 +26,9 @@ export const createTask = async (req: Request, res: Response) => {
       title,
       description,
       assignedTo: assignedTo || null,
-      status
+      status,
+      finishedAt: status === TaskStatusEnum.DONE ? new Date() : null,
+      finishedBy: status === TaskStatusEnum.DONE ? req.user?.id : null,
     });
 
     const pipeline = [
@@ -38,11 +40,15 @@ export const createTask = async (req: Request, res: Response) => {
           as: "assignedTo",
         }
       },
-      { $unwind: {
-          path: "$assignedTo",
-          preserveNullAndEmptyArrays: true
+      { $unwind: { path: "$assignedTo", preserveNullAndEmptyArrays: true } },
+      { $lookup: {
+          from: "users",
+          localField: "finishedBy",
+          foreignField: "_id",
+          as: "finishedBy",
         }
       },
+      { $unwind: { path: "$finishedBy", preserveNullAndEmptyArrays: true } },
       { $project: {
           title: 1,
           description: 1,
@@ -54,6 +60,12 @@ export const createTask = async (req: Request, res: Response) => {
             name: "$assignedTo.name",
             email: "$assignedTo.email",
             role: "$assignedTo.role"
+          },
+          finishedBy: {
+            _id: "$finishedBy._id",
+            name: "$finishedBy.name",
+            email: "$finishedBy.email",
+            role: "$finishedBy.role"
           }
         }
       },
@@ -134,7 +146,9 @@ export const updateTask = async (req: ProtectedRequest, res: Response) => {
     if (title) task.title = title;
     if (description) task.description = description;
     if (status) task.status = status;
-    await task.save();
+    if (status === TaskStatusEnum.DONE && !task.finishedBy) {
+      task.finishedBy = req.user?.id;
+    }
 
     const populatedTask = await TaskModel.findById(task._id).populate(
       "assignedTo",

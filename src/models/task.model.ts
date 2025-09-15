@@ -18,6 +18,7 @@ const taskSchema = new Schema(
       default: TaskStatusEnum.TO_DO,
     },
     assignedTo: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    finishedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     finishedAt: { type: Date, default: null, required: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
