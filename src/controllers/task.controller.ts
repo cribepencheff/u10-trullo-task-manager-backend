@@ -2,7 +2,6 @@ import { Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
 import { TaskModel, TaskStatusEnum } from "../models/task.model";
 import { UserModel } from "../models/user.model";
-import { finished } from "stream";
 
 export const createTask = async (req: ProtectedRequest, res: Response) => {
   try {
@@ -150,10 +149,12 @@ export const updateTask = async (req: ProtectedRequest, res: Response) => {
       task.finishedBy = req.user?.id;
     }
 
-    const populatedTask = await TaskModel.findById(task._id).populate(
-      "assignedTo",
-      "name email role"
-    );
+    await task.save();
+
+    const populatedTask = await TaskModel.findById(task._id)
+      .populate( "assignedTo", "name email role")
+      .populate( "finishedBy", "name email role");
+
     return res.status(200).json({ task: populatedTask });
 
   } catch (error) {
