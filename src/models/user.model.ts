@@ -14,7 +14,9 @@ const userSchema = new Schema(
       type: String,
       enum: Object.values(UserRoleEnum),
       default: UserRoleEnum.USER
-    }
+    },
+    resetToken: { type: String },
+    resetTokenExpiry: { type: Date },
   },
   { timestamps: true }
 );

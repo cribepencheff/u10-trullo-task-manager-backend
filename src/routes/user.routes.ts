@@ -7,7 +7,9 @@ import {
   loginUser,
   updateUser,
   getUser,
-  deleteUser
+  deleteUser,
+  resetPasswordReq,
+  resetPasswordWithToken
 } from "../controllers/user.controller";
 
 const router = express.Router();
@@ -17,5 +19,7 @@ router.post("/login", validate(authSchema), loginUser);
 router.get("/me", authMiddleware, getUser);
 router.put("/me", authMiddleware, validate(updateUserSchema), updateUser);
 router.delete("/:id", authMiddleware, deleteUser);
+router.post("/reset-password", resetPasswordReq);
+router.put("/reset-password/:token", resetPasswordWithToken);
 
 export default router;

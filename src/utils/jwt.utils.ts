@@ -13,7 +13,6 @@ export const createJWT = (user: InstanceType<typeof UserModel>) => {
       email: user.email,
       role: user.role,
     },
-    JWT_SECRET,
-    { expiresIn: EXPIRES_IN } as jwt.SignOptions
+    JWT_SECRET, { expiresIn: EXPIRES_IN } as jwt.SignOptions
   );
 };

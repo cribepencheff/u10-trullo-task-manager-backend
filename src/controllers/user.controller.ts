@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
 import { UserModel } from "../models/user.model";
@@ -49,7 +50,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     // Generate JWT
     const token = createJWT(user);
-    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    const expiresIn = process.env.JWT_EXPIRES_IN;
 
     // TODO: Remove console log before production
     console.log("Generated JWT:", token);
@@ -178,3 +179,56 @@ export const deleteUser = async (req: ProtectedRequest, res: Response) => {
     return res.status(500).json({ error: "Error deleting user." });
   }
 };
+
+export const resetPasswordReq = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const user = await UserModel.findOne( { email } );
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+        email: user.email
+      },
+      process.env.JWT_SECRET as string, { expiresIn: '15m' }
+    );
+
+    // TODO: Integrate with real email service
+    console.log("Password reset link:", `http://localhost:3000/resetpassword/${token}`);
+    // TODO: Remove console log before production
+    console.log("Generated JWT:", token);
+
+    return res.status(200).json({ message: "Password reset link has been sent to your email." });
+
+  } catch (error) {
+    console.error("[users/resetPassword]", error);
+    return res.status(500).json({ error: "Error generating reset link." });
+  }
+}
+
+export const resetPasswordWithToken = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+    const user = await UserModel.findOne(
+      { resetToken: token, resetTokenExpiry: { $gt: new Date() } }
+    )
+
+    if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    user.password = hashedPassword;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully." });
+  } catch (error) {
+    console.error("[users/resetPassword]", error);
+    return res.status(500).json({ error: "Error resetting password." });
+  }
+}
