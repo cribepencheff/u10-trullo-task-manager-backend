@@ -13,7 +13,7 @@ export const authMiddleware = ( req: ProtectedRequest, res: Response, next: Next
   const [scheme, token] = authHeader.split(" "); // Bearer <token>…
 
   // TODO: Remove console log before production
-  console.log(scheme, token || "⚠️ Wrong or missing token");
+  // console.log(scheme, token || "⚠️ Wrong or missing token");
   if (scheme !== "Bearer" || !token) {
     return res.status(401).json({ message: "Unauthorized request. Missing or invalid token." });
   }

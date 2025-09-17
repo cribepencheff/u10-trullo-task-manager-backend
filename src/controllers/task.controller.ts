@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Response } from "express";
 import { ProtectedRequest } from "../middleware/auth.middleware";
 import { TaskModel, TaskStatusEnum } from "../models/task.model";
@@ -6,6 +7,8 @@ import { UserModel } from "../models/user.model";
 export const createTask = async (req: ProtectedRequest, res: Response) => {
   try {
     const { title, description, assignedTo, status } = req.body;
+    // To ensure case-insensitive status input
+    const normalizedStatus = status?.toLowerCase();
 
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
@@ -15,7 +18,7 @@ export const createTask = async (req: ProtectedRequest, res: Response) => {
       return res.status(404).json({ error: "Assigned user not found" });
     }
 
-    if (status && !Object.values(TaskStatusEnum).includes(status)) {
+    if (status && !Object.values(TaskStatusEnum).includes(normalizedStatus)) {
       return res.status(400).json({
         error: `Invalid status. Allowed values: ${Object.values(TaskStatusEnum).join(", ")}`
       });
@@ -25,53 +28,17 @@ export const createTask = async (req: ProtectedRequest, res: Response) => {
       title,
       description,
       assignedTo: assignedTo || null,
-      status,
-      finishedAt: status === TaskStatusEnum.DONE ? new Date() : null,
-      finishedBy: status === TaskStatusEnum.DONE ? req.user?.id : null,
+      status: normalizedStatus,
+      finishedAt: normalizedStatus === TaskStatusEnum.DONE ? new Date() : null,
+      finishedBy: normalizedStatus === TaskStatusEnum.DONE ? req.user?.id : null,
     });
 
-    const pipeline = [
-      { $match: { _id: newTask._id } },
-      { $lookup: {
-          from: "users",
-          localField: "assignedTo",
-          foreignField: "_id",
-          as: "assignedTo",
-        }
-      },
-      { $unwind: { path: "$assignedTo", preserveNullAndEmptyArrays: true } },
-      { $lookup: {
-          from: "users",
-          localField: "finishedBy",
-          foreignField: "_id",
-          as: "finishedBy",
-        }
-      },
-      { $unwind: { path: "$finishedBy", preserveNullAndEmptyArrays: true } },
-      { $project: {
-          title: 1,
-          description: 1,
-          status: 1,
-          finishedAt: 1,
-          createdAt: 1,
-          assignedTo: {
-            _id: "$assignedTo._id",
-            name: "$assignedTo.name",
-            email: "$assignedTo.email",
-            role: "$assignedTo.role"
-          },
-          finishedBy: {
-            _id: "$finishedBy._id",
-            name: "$finishedBy.name",
-            email: "$finishedBy.email",
-            role: "$finishedBy.role"
-          }
-        }
-      },
-    ];
+    const populatedTask = await newTask.populate([
+      { path: "assignedTo", select: "name email role" },
+      { path: "finishedBy", select: "name email role" }
+    ]);
 
-    const [task] = await TaskModel.aggregate(pipeline);
-    return res.status(201).json( { task });
+    return res.status(201).json({ task: populatedTask });
 
   } catch (error) {
     console.error("[tasks/createTask]", error);
@@ -125,35 +92,47 @@ export const updateTask = async (req: ProtectedRequest, res: Response) => {
   try {
     const { title, description, status, assignedTo } = req.body;
     const task = await TaskModel.findById(req.params.id);
+    // To ensure case-insensitive status updates
+    const normalizedStatus = status?.toLowerCase();
 
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    if (req.user?.role !== "admin" && task.assignedTo && task.assignedTo._id.toString() !== req.user?.id) {
-      return res.status(403).json({ error: "Forbidden: Not allowed to edit this task" });
+    if (assignedTo !== undefined) {
+      if (assignedTo === null) {
+        // Explicitly unassigning the task
+        (task.assignedTo as mongoose.Types.ObjectId | null) = null;
+      } else {
+        const assignedUser = await UserModel.findById(assignedTo);
+        if (!assignedUser) return res.status(404).json({ error: "Assigned user not found" });
+        task.assignedTo = assignedTo;
+      }
     }
 
-    if (assignedTo) {
-      const assignedUser = await UserModel.findById(assignedTo);
-      if (!assignedUser) {
-        return res.status(404).json({ error: "Assigned user not found" });
-      }
-      task.assignedTo = assignedTo;
+    if (status && !Object.values(TaskStatusEnum).includes(normalizedStatus)) {
+      return res.status(400).json({
+        error: `Invalid status. Allowed values: ${Object.values(TaskStatusEnum).join(", ")}`
+      });
     }
 
     if (title) task.title = title;
     if (description) task.description = description;
-    if (status) task.status = status;
-    if (status === TaskStatusEnum.DONE && !task.finishedBy) {
+    if (status) task.status = normalizedStatus;
+    if (normalizedStatus === TaskStatusEnum.DONE && !task.finishedBy) {
       task.finishedBy = req.user?.id;
+    }
+    if (normalizedStatus !== TaskStatusEnum.DONE) {
+      // Explicitly clear finishedBy if status is changed from DONE to something else
+      (task.finishedBy as mongoose.Types.ObjectId | null) = null;
     }
 
     await task.save();
 
     const populatedTask = await TaskModel.findById(task._id)
-      .populate( "assignedTo", "name email role")
-      .populate( "finishedBy", "name email role");
+      .populate({ path: "assignedTo", select: "name email role" })
+      .populate({ path: "finishedBy", select: "name email role" })
+      .lean();
 
     return res.status(200).json({ task: populatedTask });
 
@@ -170,9 +149,9 @@ export const deleteTask = async (req: ProtectedRequest, res: Response) => {
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
     }
-
-    if (req.user?.role !== "admin" && task.assignedTo && task.assignedTo._id.toString() !== req.user?.id) {
-      return res.status(403).json({ error: "Forbidden: Not allowed to delete this task" });
+    const assignedId = task.assignedTo?._id?.toString() || task.assignedTo?.toString() || null;
+    if (req.user?.role !== "admin" && assignedId !== req.user?.id) {
+      return res.status(403).json({ error: "Forbidden: Not allowed to delete this task." });
     }
 
     await task.deleteOne();

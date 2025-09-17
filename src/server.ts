@@ -16,14 +16,22 @@ app.use(express.json());
 app.use("/api/tasks", taskRoutes);
 app.use("/api/users", userRoutes);
 
-// Global Error Handling
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`✅ REST API is running on port ${PORT}`);
+// Start the server only when not running tests
+// This allows tests to import the app without starting the server
+if (!process.env.JEST_WORKER_ID) {
+  // Global Error Handling
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`✅ REST API is running on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("⚠️  DB connection error:", err.message);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error("⚠️ DB connection error:", err.message);
-    process.exit(1);
-  });
+}
+
+
+// For integration testing
+export default app;

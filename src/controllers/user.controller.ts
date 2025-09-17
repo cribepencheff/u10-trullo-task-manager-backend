@@ -53,7 +53,7 @@ export const loginUser = async (req: Request, res: Response) => {
     const expiresIn = process.env.JWT_EXPIRES_IN;
 
     // TODO: Remove console log before production
-    console.log("Generated JWT:", token);
+    // console.log("Generated JWT:", token);
     return res.status(200).json({ message: "Login successful", token, expiresIn });
 
   } catch (error) {
@@ -200,7 +200,7 @@ export const resetPasswordReq = async (req: Request, res: Response) => {
     // TODO: Integrate with real email service
     console.log("Password reset link:", `http://localhost:3000/resetpassword/${token}`);
     // TODO: Remove console log before production
-    console.log("Generated JWT:", token);
+    // console.log("Generated JWT:", token);
 
     return res.status(200).json({ message: "Password reset link has been sent to your email." });
 

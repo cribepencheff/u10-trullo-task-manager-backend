@@ -1,5 +1,5 @@
 import mongoose, { Schema, InferSchemaType } from "mongoose";
-import "./user.model"; // Register User model first to avoid Mongoose populate errors
+import { User } from "./user.model";
 
 export const TaskStatusEnum = {
   TO_DO: "to-do",
@@ -33,5 +33,8 @@ taskSchema.pre("save", function (next) {
   next();
 });
 
-export type Task = InferSchemaType<typeof taskSchema>;
+export type Task = InferSchemaType<typeof taskSchema> & {
+  assignedTo: User | null;
+  finishedBy: User | null;
+};
 export const TaskModel = mongoose.model("Task", taskSchema);
