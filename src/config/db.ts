@@ -1,3 +1,4 @@
+import { success } from "../utils/colors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
@@ -13,5 +14,5 @@ export async function connectDB() {
 
   if (!mongoose.connection.db) {throw new Error("MongoDB connection not initialized")}
   await mongoose.connection.db.admin().ping();
-  console.log("✅ MongoDB connected and responding");
+  console.log(success("✓"), "MongoDB connected and responding");
 }

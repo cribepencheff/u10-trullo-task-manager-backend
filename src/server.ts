@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import { success, error } from "./utils/colors";
 import { connectDB } from "./config/db";
 
 dotenv.config();
@@ -23,11 +24,11 @@ if (!process.env.JEST_WORKER_ID) {
   connectDB()
     .then(() => {
       app.listen(PORT, () => {
-        console.log(`✅ REST API is running on port ${PORT}`);
+        console.log(success("✓"), `REST API is running on port ${PORT}`);
       });
     })
     .catch((err) => {
-      console.error("⚠️  DB connection error:", err.message);
+      console.error(error("✓"), "DB connection error:", err.message);
       process.exit(1);
     });
 }
