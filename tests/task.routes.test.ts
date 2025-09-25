@@ -16,7 +16,7 @@ const TEST_PASSWORD = "PassW0rd!";
 
 // Increase Jest timeout to 30s to allow for DB operations and network delays
 jest.setTimeout(30000);
-mongoose.set('debug', false)
+mongoose.set('debug', false);
 
 beforeAll(async () => {
   const MONGODB_URI = process.env.MONGODB_URI!;

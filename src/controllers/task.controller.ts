@@ -137,7 +137,7 @@ export const updateTask = async (req: ProtectedRequest, res: Response) => {
     return res.status(200).json({ task: populatedTask });
 
   } catch (error) {
-    console.error("[tasks/updateTask]", error);
+    console.error(`[tasks/${req.params.id}]`, error);
     return res.status(500).json({ error: "Failed to update task" });
   }
 };

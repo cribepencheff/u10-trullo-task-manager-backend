@@ -199,7 +199,6 @@ export const resetPasswordReq = async (req: Request, res: Response) => {
 
     // TODO: Integrate with real email service
     console.log("Password reset link:", `http://localhost:3000/resetpassword/${token}`);
-    // TODO: Remove console log before production
     // console.log("Generated JWT:", token);
 
     return res.status(200).json({ message: "Password reset link has been sent to your email." });
