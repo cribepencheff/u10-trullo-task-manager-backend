@@ -1,7 +1,7 @@
 import express from "express";
 import { validate } from "../middleware/validate.middleware";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { authSchema, createUserSchema, updateUserSchema } from "../scemas/user.scema";
+import { authSchema, createUserSchema, updateUserSchema } from "../schemas/user.schema";
 import {
   createUser,
   loginUser,

@@ -2,8 +2,7 @@ import app from "../src/server";
 import request from "supertest";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { authSchema, createUserSchema, updateUserSchema } from "../src/scemas/user.scema";
+import { authSchema, createUserSchema, updateUserSchema } from "../src/schemas/user.schema";
 import { UserModel, UserRoleEnum } from "../src/models/user.model";
 import { createJWT } from "../src/utils/jwt.utils";
 
@@ -17,7 +16,7 @@ let HASHED_PASSWORD: string;
 
 // Increase Jest timeout to 30s to allow for DB operations and network delays
 jest.setTimeout(30000);
-mongoose.set('debug', false)
+mongoose.set('debug', false);
 
 beforeAll(async () => {
   const MONGODB_URI = process.env.MONGODB_URI!;
