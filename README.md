@@ -83,7 +83,7 @@ Automatiska tester med Jest & Supertest för båda controllers.
 
 ***
 
-## Projektstruktur
+## 📁 Projektstruktur
 
 ```
 src/
@@ -104,9 +104,9 @@ tests/
 └── user.routes.test.ts    # Tester för user-endpoints
 ```
 
-### API Endpoints
+### 🔌 API Endpoints
 
-**Användare:**
+**👤 Användare:**
 - `POST /api/users/signup` - Registrera ny användare
 - `POST /api/users/login` - Logga in användare
 - `POST /api/users/reset-password` - Begär lösenordsåterställning
@@ -117,7 +117,7 @@ tests/
 - `GET /api/users` - Hämta alla användare (endast admin)
 - `DELETE /api/users/:id` - Ta bort användare (endast admin)
 
-**Tasks:**
+**📝 Tasks:**
 - `POST /api/tasks` - Skapa ny task (autentiserad)
 - `GET /api/tasks` - Hämta egna tasks (autentiserad)
 - `GET /api/tasks/all` - Hämta alla tasks (endast admin)
@@ -125,9 +125,29 @@ tests/
 - `PUT /api/tasks/:id` - Uppdatera task (autentiserad)
 - `DELETE /api/tasks/:id` - Ta bort task (autentiserad)
 
+### 📖 API Dokumentation
+
+**Swagger/OpenAPI Dokumentation:**  
+Komplett interaktiv API-dokumentation finns tillgänglig via Swagger:
+
+**🔗 [Visa API Dokumentation (swagger.yaml)](./swagger.yaml)**
+
+Swagger-filen innehåller:
+- Detaljerade endpoint-beskrivningar med exempel
+- Request/response schemas och valideringsregler  
+- Autentiseringsinstruktioner med test-användare
+- Interaktiva exempel för alla endpoints
+- Felkoder och felhantering
+
+**Snabbstart med Swagger:**
+1. Öppna [swagger.yaml](./swagger.yaml) på GitHub
+2. Kör `npm run seed` för test-data (krävs endast för interaktiv testning)
+3. Logga in med admin@example.com / Passw0rd!
+4. Använd JWT token för autentiserade endpoints
+
 ***
 
-### Setup & Konfiguration  
+### ⚙️ Setup & Konfiguration  
 
 **1. Installera beroenden**
 ```bash
@@ -163,14 +183,14 @@ npm run build
 npm start
 ```
 
-**4. Seedning av databasen**  
+**4. 🌱 Seedning av databasen**  
 Seed testdata:
 ```bash
 npm run seed
 ```
 Skapar 4 användare (admin@example.com / Passw0rd! är admin, plus 3 vanliga användare) och 10 tasks med blandade statusar.
 
-**5. Kör tester**  
+**5. 🧪 Kör tester**  
 För att köra tester finns några färdiga npm-skript:
 ```bash
 npm run test          # kör alla tester (översiktlig output)

@@ -9,7 +9,6 @@
     "seed": "tsx scripts/seed.ts",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-
     "test": "npx jest --runInBand",
     "test:tasks": "npx jest tests/task.routes.test.ts --runInBand",
     "test:users": "npx jest tests/user.routes.test.ts --runInBand"

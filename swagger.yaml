@@ -1,0 +1,868 @@
+openapi: 3.0.3
+info:
+  title: Trullo Task Manager API
+  description: |
+    REST API för task-hantering med användarroller och JWT-autentisering.
+    
+    **Snabbstart:**
+    1. Kör `npm run seed` för test-data
+    2. Logga in med admin@example.com / Passw0rd! 
+    3. Kopiera JWT token från login-response
+    4. Klicka "Authorize" och klistra in token (utan "Bearer ")
+    5. Testa skyddade endpoints - token skickas automatiskt!
+    
+    Se README.md för fullständig setup och projektdetaljer.
+  version: 1.0.0
+  contact:
+    name: Student Project
+    url: https://github.com/cribepencheff/u10-trullo-task-manager-backend
+  license:
+    name: MIT
+
+externalDocs:
+  description: "Fullständig projektdokumentation och setup-guide"
+  url: "https://github.com/cribepencheff/u10-trullo-task-manager-backend/blob/main/README.md"
+
+tags:
+  - name: Users
+    description: |
+      **Användarhantering och autentisering**
+      
+      Endpoints för registrering, inloggning, profilhantering och lösenordsåterställning.
+      Alla användar-endpoints utom signup/login kräver autentisering.
+  - name: Tasks  
+    description: |
+      **Uppgiftshantering och projektplanering**
+      
+      CRUD-operationer för tasks med automatisk spårning av slutförande.
+      Tasks kan tilldelas användare och har statusuppdateringar.
+
+paths:
+  # USER ENDPOINTS
+  /users/signup:
+    post:
+      tags:
+        - Users
+      summary: Registrera ny användare
+      description: Skapar ett nytt användarkonto med email och lösenord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "SecurePass123!"
+              required: [name, email, password]
+            examples:
+              new_user:
+                summary: Ny användare
+                value:
+                  name: "John Doe"
+                  email: "john@example.com"
+                  password: "SecurePass123!"
+      responses:
+        '201':
+          description: Användare skapad framgångsrikt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email redan registrerad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Email already in use"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/login:
+    post:
+      tags:
+        - Users
+      summary: Logga in användare
+      description: |
+        Autentisera användare och få JWT token som används för alla skyddade endpoints.
+        
+        **Test-användare (efter `npm run seed`):**
+        - **Admin:** admin@example.com / Passw0rd!
+        - **User:** user1@example.com / Passw0rd!
+        - **User:** user2@example.com / Passw0rd!
+        - **User:** user3@example.com / Passw0rd!
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@example.com"
+                password:
+                  type: string
+                  example: "Passw0rd!"
+              required: [email, password]
+            examples:
+              admin_login:
+                summary: Admin-inloggning (seed-data)
+                value:
+                  email: "admin@example.com"
+                  password: "Passw0rd!"
+              user_login:
+                summary: Användar-inloggning (seed-data)
+                value:
+                  email: "user1@example.com"
+                  password: "Passw0rd!"
+      responses:
+        '200':
+          description: Inloggning lyckades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token för autentisering
+                  user:
+                    $ref: '#/components/schemas/User'
+              example:
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                user:
+                  _id: "507f1f77bcf86cd799439011"
+                  name: "John Doe"
+                  email: "john@example.com"
+                  role: "user"
+        '401':
+          description: Ogiltiga inloggningsuppgifter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                user_not_found:
+                  summary: Användare finns inte
+                  value:
+                    error: "User not found."
+                invalid_credentials:
+                  summary: Felaktigt lösenord
+                  value:
+                    error: "Invalid credentials."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Hämta alla användare (endast admin)
+      description: Endast administratörer kan hämta lista över alla användare
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista över alla användare
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+              example:
+                users:
+                  - _id: "507f1f77bcf86cd799439011"
+                    name: "John Doe"
+                    email: "john@example.com"
+                    role: "user"
+                    createdAt: "2023-01-15T10:30:00Z"
+                    updatedAt: "2023-01-15T10:30:00Z"
+                  - _id: "507f1f77bcf86cd799439012"
+                    name: "Admin User"
+                    email: "admin@example.com"
+                    role: "admin"
+                    createdAt: "2023-01-15T10:30:00Z"
+                    updatedAt: "2023-01-15T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Endast administratörer har åtkomst
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Forbidden: Admins only"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Hämta egen profil
+      description: Hämtar information om den inloggade användaren
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Användarinformation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Users
+      summary: Uppdatera egen profil
+      description: Uppdaterar namn, email eller lösenord för den inloggade användaren
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Jane Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "jane.doe@example.com"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "NewSecurePass456!"
+            examples:
+              update_name:
+                summary: Uppdatera namn
+                value:
+                  name: "Jane Doe"
+              update_email:
+                summary: Uppdatera email
+                value:
+                  email: "jane.doe@example.com"
+              update_password:
+                summary: Uppdatera lösenord
+                value:
+                  password: "NewSecurePass456!"
+      responses:
+        '200':
+          description: Profil uppdaterad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{id}:
+    delete:
+      tags:
+        - Users
+      summary: Ta bort användare
+      description: Ta bort en specifik användare (egen eller som admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Användar-ID
+          schema:
+            type: string
+            format: ObjectId
+          example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Användare borttagen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/reset-password:
+    post:
+      tags:
+        - Users
+      summary: Begär lösenordsåterställning
+      description: Skickar återställningstoken via email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email för återställning
+              required:
+                - email
+            example:
+              email: "john@example.com"
+      responses:
+        '200':
+          description: Återställningstoken skickad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset email sent"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/reset-password/{token}:
+    put:
+      tags:
+        - Users
+      summary: Återställ lösenord med token
+      description: Uppdaterar lösenord med giltig återställningstoken
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Återställningstoken
+          schema:
+            type: string
+          example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+                  minLength: 8
+                  description: Nytt lösenord (min 8 tecken, specialtecken krävs)
+              required:
+                - newPassword
+            example:
+              newPassword: "NewSecurePass789!"
+      responses:
+        '200':
+          description: Lösenord återställt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password has been reset successfully."
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # TASK ENDPOINTS
+  /tasks:
+    post:
+      tags:
+        - Tasks
+      summary: Skapa ny task
+      description: Skapar en ny uppgift som kan tilldelas användare
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Implementera login-funktionalitet"
+                description:
+                  type: string
+                  example: "Skapa säker inloggning med JWT"
+                status:
+                  type: string
+                  enum: [to-do, in progress, blocked, done]
+                  example: "to-do"
+                assignedTo:
+                  type: string
+                  nullable: true
+                  example: "507f1f77bcf86cd799439011"
+              required: [title]
+            examples:
+              basic_task:
+                summary: Grundläggande task
+                value:
+                  title: "Implementera login-funktionalitet"
+                  description: "Skapa säker inloggning med JWT"
+                  status: "to-do"
+              assigned_task:
+                summary: Tilldelad task
+                value:
+                  title: "Code review"
+                  description: "Granska PR #123"
+                  assignedTo: "507f1f77bcf86cd799439011"
+                  status: "in progress"
+      responses:
+        '201':
+          description: Task skapad framgångsrikt
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Tilldelad användare finns inte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Assigned user not found"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Tasks
+      summary: Hämta egna tasks
+      description: Hämtar alla tasks tilldelade till den inloggade användaren
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista över användarens tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+              example:
+                tasks:
+                  - _id: "507f1f77bcf86cd799439020"
+                    title: "Implementera login"
+                    description: "Skapa säker inloggning med JWT"
+                    status: "in progress"
+                    assignedTo:
+                      _id: "507f1f77bcf86cd799439011"
+                      name: "John Doe"
+                      email: "john@example.com"
+                    finishedBy: null
+                    finishedAt: null
+                    createdAt: "2023-01-15T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /tasks/all:
+    get:
+      tags:
+        - Tasks
+      summary: Hämta alla tasks (endast admin)
+      description: Endast administratörer kan hämta alla tasks i systemet
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista över alla tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Endast administratörer har åtkomst
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Forbidden: Admins only"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /tasks/{id}:
+    get:
+      tags:
+        - Tasks
+      summary: Hämta specifik task
+      description: Hämtar en specifik task (endast för tilldelade användare eller admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task-ID
+          schema:
+            type: string
+            format: ObjectId
+          example: "507f1f77bcf86cd799439020"
+      responses:
+        '200':
+          description: Task-information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Inte behörig att visa denna task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden: Not allowed to view this task"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Tasks
+      summary: Uppdatera task
+      description: |
+        Uppdaterar en befintlig task. När status ändras till "done":
+        - `finishedBy` sätts automatiskt till nuvarande användare
+        - `finishedAt` sätts till aktuell tid
+
+        När status ändras från "done" till något annat rensas dessa fält.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task-ID
+          schema:
+            type: string
+            format: ObjectId
+          example: "507f1f77bcf86cd799439020"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Uppdaterad titel"
+                description:
+                  type: string
+                  example: "Uppdaterad beskrivning"
+                status:
+                  type: string
+                  enum: [to-do, in progress, blocked, done]
+                  example: "done"
+                assignedTo:
+                  type: string
+                  nullable: true
+                  example: "507f1f77bcf86cd799439012"
+            examples:
+              update_status:
+                summary: Uppdatera status
+                value:
+                  status: "done"
+              reassign_task:
+                summary: Tilldela ny användare
+                value:
+                  assignedTo: "507f1f77bcf86cd799439012"
+                  status: "in progress"
+              unassign_task:
+                summary: Ta bort tilldelning
+                value:
+                  assignedTo: null
+      responses:
+        '200':
+          description: Task uppdaterad
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Ta bort task
+      description: Tar bort en task (endast för tilldelade användare eller admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Task-ID
+          schema:
+            type: string
+            format: ObjectId
+          example: "507f1f77bcf86cd799439020"
+      responses:
+        '200':
+          description: Task borttagen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Task deleted successfully"
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Inte behörig att ta bort denna task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden: Not allowed to delete this task."
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id: 
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        name: 
+          type: string
+          example: "John Doe"
+        email: 
+          type: string
+          example: "john@example.com"
+        role: 
+          type: string
+          enum: [user, admin]
+          example: "user"
+        createdAt: 
+          type: string
+          format: date-time
+        updatedAt: 
+          type: string 
+          format: date-time
+
+    Task:
+      type: object
+      properties:
+        _id: 
+          type: string
+          example: "507f1f77bcf86cd799439020"
+        title: 
+          type: string
+          example: "Implementera login-funktionalitet"
+        description: 
+          type: string
+          nullable: true
+          example: "Skapa säker inloggning med JWT"
+        status: 
+          type: string
+          enum: [to-do, in progress, blocked, done]
+          example: "in progress"
+        assignedTo: 
+          $ref: '#/components/schemas/User'
+          nullable: true
+        finishedBy: 
+          $ref: '#/components/schemas/User'
+          nullable: true
+        finishedAt: 
+          type: string
+          format: date-time
+          nullable: true
+        createdAt: 
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error: 
+          type: string
+          example: "Validation failed"
+        message: 
+          type: string
+          example: "Invalid request"
+
+  responses:
+    BadRequest:
+      description: Ogiltig begäran eller valideringsfel
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validation_error:
+              summary: Valideringsfel
+              value:
+                error: "Title is required"
+            invalid_status:
+              summary: Ogiltig status
+              value:
+                error: "Invalid status. Allowed values: to-do, in progress, blocked, done"
+
+    Unauthorized:
+      description: Autentisering krävs eller ogiltig token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            missing_token:
+              summary: Token saknas
+              value:
+                message: "Unauthorized request. Missing or invalid token."
+            invalid_token:
+              summary: Ogiltig token
+              value:
+                message: "Unauthorized: Invalid token"
+
+    Forbidden:
+      description: Otillräckliga behörigheter
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Forbidden: Admins only"
+
+    NotFound:
+      description: Resurs hittades inte
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            user_not_found:
+              summary: Användare inte funnen
+              value:
+                error: "User not found"
+            task_not_found:
+              summary: Task inte funnen
+              value:
+                error: "Task not found"
+
+    InternalServerError:
+      description: Internt serverfel
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            server_error:
+              summary: Serverfel
+              value:
+                error: "Internal server error"
+            db_error:
+              summary: Databasfel
+              value:
+                error: "Failed to connect to database"
