@@ -62,6 +62,16 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 }
 
+export const getUsers = async (req: ProtectedRequest, res: Response) => {
+  try {
+    const users = await UserModel.find().select("-password");
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error("[users/getUsers]", error);
+    return res.status(500).json({ error: "Error fetching users." });
+  }
+};
+
 export const getUser = async (req: ProtectedRequest, res: Response) => {
   const userId = req.user?.id;
 

@@ -9,8 +9,11 @@ import { createJWT } from "../src/utils/jwt.utils";
 
 let USER_TOKEN: string;
 let USER_ID: string;
+let ADMIN_TOKEN: string;
+let ADMIN_ID: string;
 
 const TEST_EMAIL = "test_user@test.com";
+const ADMIN_EMAIL = "admin_user@test.com";
 const TEST_PASSWORD = "PassW0rd!";
 let HASHED_PASSWORD: string;
 
@@ -30,15 +33,29 @@ beforeAll(async () => {
     password: HASHED_PASSWORD
   });
 
+  const parsedAdmin = createUserSchema.parse({
+    name: "Admin User",
+    email: ADMIN_EMAIL,
+    password: HASHED_PASSWORD
+  });
+
   // Create a test user directly in DB for login & token
   const user = await UserModel.create(parsedUser);
   USER_ID = user._id.toString();
   USER_TOKEN = createJWT(user);
+
+  // Create an admin user for admin-only tests
+  const admin = await UserModel.create({
+    ...parsedAdmin,
+    role: UserRoleEnum.ADMIN
+  });
+  ADMIN_ID = admin._id.toString();
+  ADMIN_TOKEN = createJWT(admin);
 });
 
 afterAll(async () => {
   await UserModel.deleteMany({
-    email: { $in: [TEST_EMAIL, "new_user@test.com", "temp_user@test.com"] }
+    email: { $in: [TEST_EMAIL, ADMIN_EMAIL, "new_user@test.com", "temp_user@test.com"] }
   });
   await mongoose.connection.close();
 });
@@ -153,6 +170,42 @@ describe("User routes", () => {
     expect(updatedUser).not.toBeNull();
     expect(updatedUser?.resetToken).toBeNull();
     expect(updatedUser?.resetTokenExpiry).toBeNull();
+  });
+
+  it("should allow admin to get all users", async () => {
+    const res = await request(app)
+      .get("/api/users")
+      .set("Authorization", `Bearer ${ADMIN_TOKEN}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("users");
+    expect(Array.isArray(res.body.users)).toBe(true);
+    expect(res.body.users.length).toBeGreaterThan(0);
+
+    // Check that passwords are not included in response
+    res.body.users.forEach((user: any) => {
+      expect(user).not.toHaveProperty("password");
+      expect(user).toHaveProperty("_id");
+      expect(user).toHaveProperty("name");
+      expect(user).toHaveProperty("email");
+    });
+  });
+
+  it("should not allow regular user to get all users", async () => {
+    const res = await request(app)
+      .get("/api/users")
+      .set("Authorization", `Bearer ${USER_TOKEN}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toHaveProperty("message", "Forbidden: Admins only");
+  });
+
+  it("should not allow unauthenticated access to get all users", async () => {
+    const res = await request(app)
+      .get("/api/users");
+
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("message", "Unauthorized request. Missing or invalid token.");
   });
 });
 
