@@ -6,10 +6,10 @@ info:
     
     **Snabbstart:**
     1. Kör `npm run seed` för test-data
-    2. Logga in med admin@example.com / Passw0rd! 
-    3. Kopiera JWT token från login-response
-    4. Klicka "Authorize" och klistra in token (utan "Bearer ")
-    5. Testa skyddade endpoints - token skickas automatiskt!
+    2. Starta API:et med `npm run dev`
+    3. Logga in med admin@example.com / Passw0rd! (minst 8 tecken + specialtecken)
+    4. Kopiera JWT token från login-response
+    5. För skyddade endpoints: lägg till header "Authorization: Bearer {token}"
     
     Se README.md för fullständig setup och projektdetaljer.
   version: 1.0.0

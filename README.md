@@ -2,7 +2,19 @@
 
 ## Mål / Uppdrag
 
-Målet är att skapa ett REST-API för en projekthanterings-applikation vid namn Trullo. API\:et ska möjliggöra att användare (User) kan skapa uppgifter (Task) och planera projekt. Databasen ska vara antingen SQL eller NoSQL.
+Målet är att skapa ett REST-API för en projekthanterings-applikation vid na**📖 API Dokumentation**
+
+**Swagger/OpenAPI Dokumentation:**  
+Komplett API-dokumentation finns tillgänglig i läsbart format:
+
+**🌐 [Visa Live API Dokumentation](https://cribepencheff.github.io/u10-trullo-task-manager-backend/)**
+
+Dokumentationen innehåller:
+- Detaljerade endpoint-beskrivningar med exempel
+- Request/response schemas och valideringsregler  
+- Autentiseringsinstruktioner med test-användare
+- Felkoder och felhantering
+- Komplett översikt av alla API-endpointsI\:et ska möjliggöra att användare (User) kan skapa uppgifter (Task) och planera projekt. Databasen ska vara antingen SQL eller NoSQL.
 
 ***
 
@@ -41,12 +53,18 @@ Applikationen Trullo är en light-version av ett "task manager"-verktyg som Trel
 Den bygger på Users och Tasks och hanterar olika roller:  
 Admin kan göra allt, medan Regular User är begränsad till sina egna tasks.  
 
-**Extra funktionalitet för VG:**  
-Tasks sparar automatiskt vem som slutfört dem (`finishedBy`) och när (`finishedAt`) när status sätts till "done".  
-Endast autentiserade användare kan ändra sina tasks och admin kan hantera alla tasks och users.  
-Lösenordsåterställning med JWT-token.  
-Strukturerad projektarkitektur med middleware, validering och felhantering.  
-Automatiska tester med Jest & Supertest för båda controllers.  
+**VG-funktionalitet:**  
+- JWT-autentisering och rollhantering (admin/user)
+- Tasks sparar automatiskt vem som slutfört dem (`finishedBy`) och när (`finishedAt`) när status sätts till "done"
+- Lösenordsåterställning med JWT-token
+- Robust felhantering och validering med Zod
+- Krypterade lösenord med bcrypt (hash + salt)
+- Strukturerad projektarkitektur med middleware
+
+**Extra funktioner utöver VG:**  
+- Automatiska tester med Jest & Supertest för båda controllers
+- Interaktiv Swagger/OpenAPI dokumentation med GitHub Pages
+- Separata test-kommandon för utveckling och debugging  
   
 
 **Users:**  
@@ -128,22 +146,25 @@ tests/
 ### 📖 API Dokumentation
 
 **Swagger/OpenAPI Dokumentation:**  
-Komplett interaktiv API-dokumentation finns tillgänglig via Swagger:
+Komplett API-dokumentation finns tillgänglig i läsbart format:
 
-**🔗 [Visa API Dokumentation (swagger.yaml)](./swagger.yaml)**
+**🌐 [Visa Live API Dokumentation](https://cribepencheff.github.io/u10-trullo-task-manager-backend/)**
 
-Swagger-filen innehåller:
+Dokumentationen innehåller:
 - Detaljerade endpoint-beskrivningar med exempel
 - Request/response schemas och valideringsregler  
 - Autentiseringsinstruktioner med test-användare
-- Interaktiva exempel för alla endpoints
 - Felkoder och felhantering
+- Komplett översikt av alla API-endpoints
 
-**Snabbstart med Swagger:**
-1. Öppna [swagger.yaml](./swagger.yaml) på GitHub
-2. Kör `npm run seed` för test-data (krävs endast för interaktiv testning)
-3. Logga in med admin@example.com / Passw0rd!
-4. Använd JWT token för autentiserade endpoints
+**För API-testning:**
+1. Starta API:et lokalt (`npm run dev`) 
+2. Kör `npm run seed` för test-data
+3. Logga in med admin@example.com / Passw0rd! för JWT token
+4. Använd Postman, cURL eller liknande för att testa endpoints
+5. Lägg till header: `Authorization: Bearer {token}` för skyddade endpoints
+
+**Alternativt:** [Visa swagger.yaml på GitHub](./swagger.yaml)
 
 ***
 
