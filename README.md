@@ -37,14 +37,16 @@ Kör TypeScript direkt utan förkompilering för utveckling och tester.
 ***
 
 ### Redogör översiktligt hur applikationen fungerar  
-Applikationen Trullo är en light-version av ett "task manager"-verktyg som Trello. Den bygger på Users och Tasks och hanterar olika roller: Admin kan göra allt, medan Regular User är begränsad till sina egna tasks.  
+Applikationen Trullo är en light-version av ett "task manager"-verktyg som Trello.  
+Den bygger på Users och Tasks och hanterar olika roller:  
+Admin kan göra allt, medan Regular User är begränsad till sina egna tasks.  
 
 **Extra funktionalitet för VG:**  
 Tasks sparar automatiskt vem som slutfört dem (`finishedBy`) och när (`finishedAt`) när status sätts till "done".  
 Endast autentiserade användare kan ändra sina tasks och admin kan hantera alla tasks och users.  
 Lösenordsåterställning med JWT-token.  
-Automatiska tester med Jest & Supertest för båda controllers.  
 Strukturerad projektarkitektur med middleware, validering och felhantering.  
+Automatiska tester med Jest & Supertest för båda controllers.  
   
 
 **Users:**  
