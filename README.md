@@ -1,30 +1,19 @@
 # u10 – Trullo - Task Manager, Backend
 
-## Mål / Uppdrag
+### Mål / Uppdrag
 
-Målet är att skapa ett REST-API för en projekthanterings-applikation vid na**📖 API Dokumentation**
-
-**Swagger/OpenAPI Dokumentation:**  
-Komplett API-dokumentation finns tillgänglig i läsbart format:
-
-**🌐 [Visa Live API Dokumentation](https://cribepencheff.github.io/u10-trullo-task-manager-backend/)**
-
-Dokumentationen innehåller:
-- Detaljerade endpoint-beskrivningar med exempel
-- Request/response schemas och valideringsregler  
-- Autentiseringsinstruktioner med test-användare
-- Felkoder och felhantering
-- Komplett översikt av alla API-endpointsI\:et ska möjliggöra att användare (User) kan skapa uppgifter (Task) och planera projekt. Databasen ska vara antingen SQL eller NoSQL.
+Målet är att skapa ett REST-API för en projekthanterings-applikation vid namn Trullo.  
+API\:et ska möjliggöra att användare (User) kan skapa uppgifter (Task) och planera projekt. Databasen ska vara antingen SQL eller NoSQL.  
 
 ***
 
-## Teoretiska resonemang  
-### Motivera ditt val av databas  
+## Teoretiska resonemang
+
+### 1. Motivera ditt val av databas  
 Jag har valt att använda MongoDB (NoSQL) med Mongoose. Huvudanledningen är att jag vill fördjupa mig i och lära mig MongoDB ordentligt, efter att ha arbetat med SQL och Prisma förra terminen. Jag vill se och känna på för- och nackdelar med NoSQL, till exempel att jag kan bygga vidare på modeller och schema utan invecklade migrationer.  
 
-***
 
-### Redogör vad de olika teknikerna (ex. verktyg, npm-paket, etc.) gör i applikationen  
+### 2. Redogör vad de olika teknikerna (ex. verktyg, npm-paket, etc.) gör i applikationen  
 - **Express:**  
 Serverramverk för routing och endpoints för Users och Tasks.  
 - **TypeScript & diverse @types/:**  
@@ -46,9 +35,7 @@ Testar API-endpoints och funktionalitet.
 - **tsx:**  
 Kör TypeScript direkt utan förkompilering för utveckling och tester.  
 
-***
-
-### Redogör översiktligt hur applikationen fungerar  
+### 3. Redogör översiktligt hur applikationen fungerar  
 Applikationen Trullo är en light-version av ett "task manager"-verktyg som Trello.  
 Den bygger på Users och Tasks och hanterar olika roller:  
 Admin kan göra allt, medan Regular User är begränsad till sina egna tasks.  
@@ -101,7 +88,7 @@ Admin kan göra allt, medan Regular User är begränsad till sina egna tasks.
 
 ***
 
-## 📁 Projektstruktur
+### 📁 Projektstruktur
 
 ```
 src/
@@ -121,6 +108,8 @@ tests/
 ├── task.routes.test.ts    # Tester för task-endpoints
 └── user.routes.test.ts    # Tester för user-endpoints
 ```
+
+***
 
 ### 🔌 API Endpoints
 
@@ -142,6 +131,8 @@ tests/
 - `GET /api/tasks/:id` - Hämta specifik task (autentiserad)
 - `PUT /api/tasks/:id` - Uppdatera task (autentiserad)
 - `DELETE /api/tasks/:id` - Ta bort task (autentiserad)
+
+***
 
 ### 📖 API Dokumentation
 
@@ -175,7 +166,13 @@ Dokumentationen innehåller:
 npm install
 ```
   
-**2. Miljövariabler**  
+**2. MongoDB-databas (krävs)**  
+Du behöver en MongoDB-databas för att köra applikationen, t.ex. MongoDB Atlas (molnbaserad):
+1. Gå till [MongoDB Atlas](https://www.mongodb.com/atlas) och skapa ett gratis konto
+2. Skapa ett nytt cluster och konfigurera databasåtkomst
+3. Hämta connection string från "Connect" → "Connect your application"  
+  
+**3. Miljövariabler**  
 Skapa en .env-fil i projektets rot baserat på `.env.example`:  
 ```bash
 JWT_SECRET=<JWT_SECRET>
@@ -192,7 +189,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
 ```
 Kopiera strängen och klistra in som JWT_SECRET.  
 
-**3. Bygg och starta applikationen**  
+**4. Bygg och starta applikationen**  
 För utveckling med live reload:
 ```bash
 npm run dev
@@ -204,14 +201,14 @@ npm run build
 npm start
 ```
 
-**4. 🌱 Seedning av databasen**  
+**5. 🌱 Seedning av databasen**  
 Seed testdata:
 ```bash
 npm run seed
 ```
 Skapar 4 användare (admin@example.com / Passw0rd! är admin, plus 3 vanliga användare) och 10 tasks med blandade statusar.
 
-**5. 🧪 Kör tester**  
+**6. 🧪 Kör tester**  
 För att köra tester finns några färdiga npm-skript:
 ```bash
 npm run test          # kör alla tester (översiktlig output)
