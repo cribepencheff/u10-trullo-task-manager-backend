@@ -12,6 +12,8 @@ API\:et ska möjliggöra att användare (User) kan skapa uppgifter (Task) och pl
 ### 1. Motivera ditt val av databas  
 Jag har valt att använda MongoDB (NoSQL) med Mongoose. Huvudanledningen är att jag vill fördjupa mig i och lära mig MongoDB ordentligt, efter att ha arbetat med SQL och Prisma förra terminen. Jag vill se och känna på för- och nackdelar med NoSQL, till exempel att jag kan bygga vidare på modeller och schema utan invecklade migrationer.  
 
+**Reflektion:**  
+MongoDB fungerade bra för snabb och iterativ utveckling med flexibla scheman och invecklade migrationer, men kräver mer manuell kontroll av datarelationer. Exempelvis måste jag själv validera att `assignedTo` pekar på en existerande användare i controller-koden, medan SQL med foreign keys hade förhindrat ogiltiga referenser automatiskt.  
 
 ### 2. Redogör vad de olika teknikerna (ex. verktyg, npm-paket, etc.) gör i applikationen  
 - **Express:**  
